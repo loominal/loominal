@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test files
+coverage/
+*.log
+
+# Component repos (managed separately)
+warp/
+weft/
+pattern/
+loom-tools/
+
+# Local development
+test-scenarios/
+publication-review/
+k8s-deploy/
+docs/
+
+# Claude session files
+*.session
+RESUME.md
+PHASE-*.md
