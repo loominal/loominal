@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+**/node_modules/
 
 # Build outputs
 dist/
@@ -31,7 +32,6 @@ pattern/
 loom-tools/
 
 # Local development
-test-scenarios/
 publication-review/
 k8s-deploy/
 docs/

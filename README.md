@@ -26,18 +26,21 @@ Today's AI coding assistants are **islands**. Each Claude Code session, each Git
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              WARP (Backbone)                                │
-│                    NATS JetStream + MCP Server                              │
-│              Persistent messaging infrastructure for agents                 │
+│                           NATS JetStream                                    │
+│                    Channels • KV Stores • Work Queues                       │
 └─────────────────────────────────────────────────────────────────────────────┘
         ▲               ▲               ▲               ▲               ▲
         │               │               │               │               │
    ┌────┴────┐     ┌────┴────┐     ┌────┴────┐     ┌────┴────┐     ┌────┴────┐
-   │ Claude  │     │ Claude  │     │ Copilot │     │  WEFT   │     │  Your   │
-   │  Code   │     │  Code   │     │   CLI   │     │ Service │     │  Agent  │
-   │ (Home)  │     │ (Cloud) │     │ (Work)  │     │         │     │         │
-   └─────────┘     └─────────┘     └─────────┘     └─────────┘     └─────────┘
-     Agent           Agent           Agent        Coordinator        Agent
+   │  Warp   │     │  Warp   │     │  Warp   │     │  Weft   │     │  Warp   │
+   │  (MCP)  │     │  (MCP)  │     │  (MCP)  │     │  (API)  │     │  (MCP)  │
+   └────┬────┘     └────┬────┘     └────┬────┘     └─────────┘     └────┬────┘
+        │               │               │                               │
+   ┌────┴────┐     ┌────┴────┐     ┌────┴────┐                     ┌────┴────┐
+   │ Claude  │     │ Claude  │     │ Copilot │                     │  Your   │
+   │  Code   │     │  Code   │     │   CLI   │                     │  Agent  │
+   │ (Home)  │     │ (Cloud) │     │ (Work)  │                     │         │
+   └─────────┘     └─────────┘     └─────────┘                     └─────────┘
 ```
 
 ### The Components
@@ -69,6 +72,12 @@ Together, Warp and Weft create the fabric. Shuttle moves work through it.
 - **Multiple mechanisms**: SSH, Kubernetes Jobs, GitHub Actions, Webhooks
 - **Idle detection** shuts down unused agents to save resources
 - **Target registry** manages your fleet of potential agent hosts
+
+### Unified Agent Identity (Warp + Pattern)
+- **Persistent identity** across restarts (same folder + same computer = same agent)
+- **Deterministic IDs** derived from `sha256(hostname + projectPath)`
+- **Sub-agent hierarchy** with parent-child relationships
+- **Cross-service consistency** between Warp (messaging) and Pattern (memory)
 
 ### Fleet Management (Shuttle)
 - **Submit work** from the command line
@@ -169,6 +178,12 @@ shuttle submit "Implement user authentication" \
 
 ## Architecture
 
+**For comprehensive system architecture and data flow patterns:**
+→ [**ARCHITECTURE.md**](./ARCHITECTURE.md) - Complete system design, component interaction, deployment patterns
+
+**For progressive testing strategy and production readiness:**
+→ [**TESTING.md**](./TESTING.md) - Unit, integration, system, and E2E testing with validation checklists
+
 ### Warp — The Backbone
 
 A standards-compliant MCP server that adds 16 tools to Claude Code:
@@ -214,12 +229,26 @@ shuttle stats              # View coordinator statistics
 
 ### Project Isolation
 
-Every project gets its own namespace derived from the working directory. Agents in different projects can't see each other by default—but can opt into cross-project communication when needed.
+Every project gets its own namespace derived from the working directory. Agent identities are also derived from the hostname + project path, ensuring consistent identification across restarts and services. Agents in different projects can't see each other by default—but can opt into cross-project communication when needed.
 
 ```
 /home/user/project-a  →  namespace: a1b2c3d4...
 /home/user/project-b  →  namespace: e5f6g7h8...
 ```
+
+### Agent Identity
+
+Loominal v0.2.0 introduces unified identity management:
+
+```
+Root Agent ID = sha256(hostname + projectPath)[0:32]
+Sub-Agent ID  = sha256(parentId + subagentType)[0:32]
+```
+
+- **Root agents** get stable IDs that persist across restarts
+- **Sub-agents** (e.g., "explore", "plan", "test") derive IDs from their parent
+- **Identity stored** in NATS KV bucket `loom-identity-{projectId}`
+- **Warp creates** identity; **Pattern reads** it for consistent agent tracking
 
 ## Comparison
 
@@ -289,6 +318,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for release history.
 - [x] **Weft**: Intelligent routing and dynamic scaling
 - [x] **Shuttle**: CLI for fleet management
 - [x] **Beta Integration Testing**: Multi-machine, performance, failure scenarios
+- [x] **v0.2.0**: Unified identity management (persistent IDs, sub-agent hierarchy)
 - [ ] **Observability**: Prometheus metrics, Grafana dashboards
 - [ ] **Multi-tenant**: SaaS deployment option
 
