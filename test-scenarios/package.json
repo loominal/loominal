@@ -1,0 +1,14 @@
+{
+  "name": "loom-integration-tests",
+  "version": "1.0.0",
+  "description": "Integration tests for Loom components",
+  "type": "module",
+  "scripts": {
+    "test:dm": "node 05-direct-messaging/test-dm.mjs",
+    "test:dlq": "node 06-dead-letter-queue/test-dlq.mjs",
+    "cleanup": "node cleanup.mjs"
+  },
+  "dependencies": {
+    "nats": "^2.28.2"
+  }
+}

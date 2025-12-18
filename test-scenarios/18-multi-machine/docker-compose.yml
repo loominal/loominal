@@ -1,0 +1,52 @@
+# Multi-machine simulation using Docker containers
+# Uses existing local NATS (localhost:4222) and Weft (localhost:3000)
+# Simulates remote agents connecting from different "machines"
+
+services:
+  # Machine B: Agent Simulator 1 (connects to host NATS/Weft)
+  agent1:
+    image: node:20-alpine
+    container_name: multi-agent1
+    working_dir: /app
+    volumes:
+      - ../../warp:/app
+      - agent1-node-modules:/app/node_modules
+    command: ["sh", "-c", "npm install --silent && sleep infinity"]
+    environment:
+      # Connect to host machine's NATS via host.docker.internal
+      - NATS_URL=nats://host.docker.internal:4222
+      - PROJECT_ID=default
+      - AGENT_HANDLE=agent-machine-b
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - loominal-network
+
+  # Machine C: Agent Simulator 2 / Shuttle Client
+  agent2:
+    image: node:20-alpine
+    container_name: multi-agent2
+    working_dir: /app
+    volumes:
+      - ../../warp:/app
+      - ../../weft/shuttle:/shuttle:ro
+      - agent2-node-modules:/app/node_modules
+    command: ["sh", "-c", "npm install --silent && sleep infinity"]
+    environment:
+      # Connect to host machine's NATS and Weft via host.docker.internal
+      - NATS_URL=nats://host.docker.internal:4222
+      - LOOMINAL_API_URL=http://host.docker.internal:3000
+      - PROJECT_ID=default
+      - AGENT_HANDLE=agent-machine-c
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - loominal-network
+
+networks:
+  loominal-network:
+    driver: bridge
+
+volumes:
+  agent1-node-modules:
+  agent2-node-modules:
